@@ -1,2 +1,3 @@
 option('fuzzing', type: 'boolean', value: false, description: 'Enable fuzzing tests')
+option('native_ha', type: 'boolean', value: false, description: 'Build experimental native HA replication primitives (no NF failover support)')
 option('lib_fuzzing_engine', type : 'string', value : '', description : 'Path to the libFuzzer engine library')
