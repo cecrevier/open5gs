@@ -16,6 +16,9 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 testinc = include_directories('.')
+if get_option('native_ha')
+    subdir('ha')
+endif
 
 subdir('core')
 subdir('crypt')

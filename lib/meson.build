@@ -18,6 +18,9 @@
 libinc = include_directories('.')
 
 subdir('core')
+if get_option('native_ha')
+    subdir('ha')
+endif
 subdir('third-party')
 subdir('proto')
 subdir('dbi')
