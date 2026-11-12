@@ -22,15 +22,17 @@
 #include "s1ap-build.h"
 #include "sbc-handler.h"
 
-void sbc_handle_write_replace_warning_request(sbc_pws_data_t *sbc_pws)
+int sbc_handle_write_replace_warning_request(sbc_pws_data_t *sbc_pws)
 {
     ogs_pkbuf_t *s1apbuf = NULL;
     mme_enb_t *enb = NULL;
-    int i, j, flag, r;
+    int i, j, flag, r, sent = 0;
 
     /* Find enB with matched TAI */
     ogs_list_for_each(&mme_self()->enb_list, enb) {
         flag = 0;
+        if (!enb->state.s1_setup_success) continue;
+        if (sbc_pws->explicit_tais && !sbc_pws->no_of_tai) continue;
         if (sbc_pws->no_of_tai > 0) {
             for (i = 0, flag = 0; i < enb->num_of_supported_ta_list; i++) {
                 for (j = 0; j < sbc_pws->no_of_tai; j++) {
@@ -50,26 +52,30 @@ void sbc_handle_write_replace_warning_request(sbc_pws_data_t *sbc_pws)
             s1apbuf = s1ap_build_write_replace_warning_request(sbc_pws);
             if (!s1apbuf) {
                 ogs_error("s1ap_build_kill_request() failed");
-                return;
+                return -1;
             }
 
             /* Send to enb */
             r = s1ap_send_to_enb(enb, s1apbuf, S1AP_NON_UE_SIGNALLING);
             ogs_expect(r == OGS_OK);
-            ogs_assert(r != OGS_ERROR);
+            if (r == OGS_OK) sent++;
+
         }
     }
+    return sent;
 }
 
-void sbc_handle_stop_warning_request(sbc_pws_data_t *sbc_pws)
+int sbc_handle_stop_warning_request(sbc_pws_data_t *sbc_pws)
 {
     ogs_pkbuf_t *s1apbuf = NULL;
     mme_enb_t *enb = NULL;
-    int i, j, flag, r;
+    int i, j, flag, r, sent = 0;
 
     /* Find enB with matched TAI */
     ogs_list_for_each(&mme_self()->enb_list, enb) {
         flag = 0;
+        if (!enb->state.s1_setup_success) continue;
+        if (sbc_pws->explicit_tais && !sbc_pws->no_of_tai) continue;
         if (sbc_pws->no_of_tai > 0) {
             for (i = 0, flag = 0; i < enb->num_of_supported_ta_list; i++) {
                 for (j = 0; j < sbc_pws->no_of_tai; j++) {
@@ -89,13 +95,15 @@ void sbc_handle_stop_warning_request(sbc_pws_data_t *sbc_pws)
             s1apbuf = s1ap_build_kill_request(sbc_pws);
             if (!s1apbuf) {
                 ogs_error("s1ap_build_kill_request() failed");
-                return;
+                return -1;
             }
 
             /* Send to enb */
             r = s1ap_send_to_enb(enb, s1apbuf, S1AP_NON_UE_SIGNALLING);
             ogs_expect(r == OGS_OK);
-            ogs_assert(r != OGS_ERROR);
+            if (r == OGS_OK) sent++;
+
         }
     }
+    return sent;
 }
