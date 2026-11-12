@@ -35,6 +35,7 @@ extern "C" {
 
 /* SBc-AP WriteReplaceWarning data */
 typedef struct _sbc_pws_data_t {
+    bool explicit_tais;
     uint16_t message_id;
     uint16_t serial_number;
     uint32_t no_of_tai;
@@ -43,7 +44,7 @@ typedef struct _sbc_pws_data_t {
     uint32_t number_of_broadcast;
     uint8_t data_coding_scheme;
     uint32_t message_length;
-    uint8_t message_contents[1024]; /* TODO: max 9600 */
+    uint8_t message_contents[9600]; /* TODO: max 9600 */
 } sbc_pws_data_t;
 
 #ifdef __cplusplus

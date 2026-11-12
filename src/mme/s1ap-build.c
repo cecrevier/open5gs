@@ -3314,6 +3314,23 @@ ogs_pkbuf_t *s1ap_build_mme_status_transfer(
     return ogs_s1ap_encode(&pdu);
 }
 
+/* Preserve the requested TAI scope all the way to the eNodeB, including
+ * eNodeBs serving more than one tracking area. Never omit an explicit area. */
+static void sbc_build_tai_area(S1AP_WarningAreaList_t *area,const sbc_pws_data_t *p)
+{
+    unsigned int i;
+    area->present=S1AP_WarningAreaList_PR_trackingAreaListforWarning;
+    area->choice.trackingAreaListforWarning=CALLOC(1,sizeof(*area->choice.trackingAreaListforWarning));
+    ogs_assert(area->choice.trackingAreaListforWarning);
+    for(i=0;i<p->no_of_tai;i++) {
+        S1AP_TAI_t *tai=CALLOC(1,sizeof(*tai));ogs_assert(tai);
+        tai->pLMNidentity.buf=CALLOC(3,1);tai->pLMNidentity.size=3;
+        memcpy(tai->pLMNidentity.buf,&p->tai[i].plmn_id,3);
+        ogs_asn_uint16_to_OCTET_STRING(p->tai[i].tac,&tai->tAC);
+        ASN_SEQUENCE_ADD(&area->choice.trackingAreaListforWarning->list,tai);
+    }
+}
+
 ogs_pkbuf_t *s1ap_build_write_replace_warning_request(sbc_pws_data_t *sbc_pws)
 {
     S1AP_S1AP_PDU_t pdu;
@@ -3353,6 +3370,16 @@ ogs_pkbuf_t *s1ap_build_write_replace_warning_request(sbc_pws_data_t *sbc_pws)
     WriteReplaceWarningRequest->protocolIEs =
         ogs_asn_calloc_protocol_ies(&asn_DEF_S1AP_WriteReplaceWarningRequest);
     ogs_assert(WriteReplaceWarningRequest->protocolIEs);
+
+    if(sbc_pws->explicit_tais) {
+        ie=CALLOC(1,sizeof(*ie));ogs_assert(ie);
+        ie->id=S1AP_ProtocolIE_ID_id_WarningAreaList;ie->criticality=S1AP_Criticality_ignore;
+        ie->value.present=S1AP_WriteReplaceWarningRequestIEs__value_PR_WarningAreaList;
+        ie->value.choice.WarningAreaList=CALLOC(1,sizeof(*ie->value.choice.WarningAreaList));
+        ogs_assert(ie->value.choice.WarningAreaList);
+        sbc_build_tai_area(ie->value.choice.WarningAreaList,sbc_pws);
+        ASN_SEQUENCE_ADD(WriteReplaceWarningRequest->protocolIEs,ie);
+    }
 
     ie = CALLOC(1, sizeof(*ie));
     ogs_assert(ie);
@@ -3515,6 +3542,16 @@ ogs_pkbuf_t *s1ap_build_kill_request(sbc_pws_data_t *sbc_pws)
     KillRequest->protocolIEs =
         ogs_asn_calloc_protocol_ies(&asn_DEF_S1AP_KillRequest);
     ogs_assert(KillRequest->protocolIEs);
+
+    if(sbc_pws->explicit_tais) {
+        ie=CALLOC(1,sizeof(*ie));ogs_assert(ie);
+        ie->id=S1AP_ProtocolIE_ID_id_WarningAreaList;ie->criticality=S1AP_Criticality_ignore;
+        ie->value.present=S1AP_KillRequestIEs__value_PR_WarningAreaList;
+        ie->value.choice.WarningAreaList=CALLOC(1,sizeof(*ie->value.choice.WarningAreaList));
+        ogs_assert(ie->value.choice.WarningAreaList);
+        sbc_build_tai_area(ie->value.choice.WarningAreaList,sbc_pws);
+        ASN_SEQUENCE_ADD(KillRequest->protocolIEs,ie);
+    }
 
     ie = CALLOC(1, sizeof(*ie));
     ogs_assert(ie);
