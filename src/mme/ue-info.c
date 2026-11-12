@@ -247,6 +247,38 @@ static cJSON *build_pdn_array(const mme_ue_t *ue)
             if (!cJSON_AddStringToObject(it, "apn", apn)) { cJSON_Delete(it); goto oom_all; }
         }
 
+        /* Export the allocated PAA and retained PGW binding, not subscription
+         * defaults. O+M can then distinguish a preserved PDN from a fresh
+         * attach which happens to reuse the same static UE address. */
+        {
+            char text[INET6_ADDRSTRLEN];
+            const void *ipv4 = NULL, *ipv6 = NULL;
+            unsigned prefix = 0;
+            cJSON *pgw;
+            if (sess->paa.session_type == OGS_PDU_SESSION_TYPE_IPV4)
+                ipv4 = &sess->paa.addr;
+            else if (sess->paa.session_type == OGS_PDU_SESSION_TYPE_IPV6) {
+                ipv6 = sess->paa.addr6; prefix = sess->paa.len;
+            } else if (sess->paa.session_type == OGS_PDU_SESSION_TYPE_IPV4V6) {
+                ipv4 = &sess->paa.both.addr; ipv6 = sess->paa.both.addr6;
+                prefix = sess->paa.both.len;
+            }
+            if (ipv4 && inet_ntop(AF_INET, ipv4, text, sizeof(text)) &&
+                    !cJSON_AddStringToObject(it, "ipv4", text)) { cJSON_Delete(it); goto oom_all; }
+            if (ipv6 && inet_ntop(AF_INET6, ipv6, text, sizeof(text))) {
+                if (!cJSON_AddStringToObject(it, "ipv6_prefix", text) ||
+                        !cJSON_AddNumberToObject(it, "ipv6_prefix_length", prefix)) { cJSON_Delete(it); goto oom_all; }
+            }
+            pgw = cJSON_CreateObject();
+            if (!pgw) { cJSON_Delete(it); goto oom_all; }
+            if (!cJSON_AddNumberToObject(pgw, "teid", sess->pgw_s5c_teid)) { cJSON_Delete(pgw); cJSON_Delete(it); goto oom_all; }
+            if (sess->pgw_s5c_ip.ipv4 && inet_ntop(AF_INET, &sess->pgw_s5c_ip.addr, text, sizeof(text)) &&
+                    !cJSON_AddStringToObject(pgw, "ipv4", text)) { cJSON_Delete(pgw); cJSON_Delete(it); goto oom_all; }
+            if (sess->pgw_s5c_ip.ipv6 && inet_ntop(AF_INET6, sess->pgw_s5c_ip.addr6, text, sizeof(text)) &&
+                    !cJSON_AddStringToObject(pgw, "ipv6", text)) { cJSON_Delete(pgw); cJSON_Delete(it); goto oom_all; }
+            cJSON_AddItemToObjectCS(it, "pgw", pgw);
+        }
+
         /* QoS flows: list EBIs; QCI at session-level if present */
         unsigned ebi_root = 0;
         unsigned bearer_count = 0;
@@ -265,6 +297,8 @@ static cJSON *build_pdn_array(const mme_ue_t *ue)
             cJSON *q = cJSON_CreateObject();
             if (!q) { cJSON_Delete(qarr); cJSON_Delete(it); goto oom_all; }
             if (!cJSON_AddNumberToObject(q, "ebi", (double)b->ebi)) { cJSON_Delete(q); cJSON_Delete(qarr); cJSON_Delete(it); goto oom_all; }
+            if (!cJSON_AddNumberToObject(q, "qci", b->qos.index) ||
+                    !cJSON_AddNumberToObject(q, "arp_priority", b->qos.arp.priority_level)) { cJSON_Delete(q); cJSON_Delete(qarr); cJSON_Delete(it); goto oom_all; }
 
             cJSON_AddItemToArray(qarr, q);
         }

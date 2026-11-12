@@ -54,6 +54,8 @@ libmme_sources = files('''
     metrics.h
 
     mme-init.c
+    mme-operator.c
+    mme-operator.h
     mme-event.c
     mme-timer.c
     mme-context.c

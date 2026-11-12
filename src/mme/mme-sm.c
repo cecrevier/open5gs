@@ -23,6 +23,7 @@
 
 #include "s1ap-handler.h"
 #include "s1ap-path.h"
+#include "mme-operator.h"
 #include "sgsap-path.h"
 #include "nas-security.h"
 #include "nas-path.h"
@@ -94,6 +95,10 @@ void mme_state_operational(ogs_fsm_t *s, mme_event_t *e)
     ogs_assert(s);
 
     switch (e->id) {
+    case MME_EVENT_OPERATOR_REQUEST:
+        mme_operator_process(e->pkbuf);
+        e->pkbuf = NULL;
+        break;
     case OGS_FSM_ENTRY_SIG:
         break;
 
