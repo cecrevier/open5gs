@@ -55,6 +55,8 @@ const char *mme_event_get_name(mme_event_t *e)
         return OGS_FSM_NAME_INIT_SIG;
 
     switch (e->id) {
+    case MME_EVENT_OPERATOR_REQUEST:
+        return "MME_EVENT_OPERATOR_REQUEST";
     case OGS_FSM_ENTRY_SIG:
         return OGS_FSM_NAME_ENTRY_SIG;
     case OGS_FSM_EXIT_SIG:

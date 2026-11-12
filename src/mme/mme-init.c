@@ -34,6 +34,7 @@
 #include "metrics/prometheus/json_pager.h"
 #include "enb-info.h"
 #include "ue-info.h"
+#include "mme-operator.h"
 
 static ogs_thread_t *thread;
 static void mme_main(void *data);
@@ -90,6 +91,9 @@ int mme_initialize(void)
     rv = s1ap_open();
     if (rv != OGS_OK) return OGS_ERROR;
 
+    rv = mme_operator_open();
+    if (rv != OGS_OK) return rv;
+
     thread = ogs_thread_create(mme_main, NULL);
     if (!thread) return OGS_ERROR;
 
@@ -105,6 +109,8 @@ void mme_terminate(void)
     mme_event_term();
 
     ogs_thread_destroy(thread);
+
+    mme_operator_close();
 
     mme_dns_close();
     mme_gtp_close();

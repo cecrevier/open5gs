@@ -1640,13 +1640,20 @@ void mme_s11_handle_release_access_bearers_response(
     ogs_debug("    MME_S11_TEID[%d] SGW_S11_TEID[%d]",
             mme_ue->mme_s11_teid, sgw_ue->sgw_s11_teid);
 
+    if (action == OGS_GTP_RELEASE_OPERATOR_REBALANCE &&
+            (cause_value != OGS_GTP2_CAUSE_REQUEST_ACCEPTED ||
+             mme_ue_from_teid != mme_ue)) {
+        ogs_warn("Operator rebalancing refused by serving gateway");
+        return;
+    }
     ogs_list_for_each(&mme_ue->sess_list, sess) {
         ogs_list_for_each(&sess->bearer_list, bearer) {
             CLEAR_ENB_S1U_PATH(bearer);
         }
     }
 
-    if (action == OGS_GTP_RELEASE_SEND_UE_CONTEXT_RELEASE_COMMAND) {
+    if (action == OGS_GTP_RELEASE_SEND_UE_CONTEXT_RELEASE_COMMAND ||
+            action == OGS_GTP_RELEASE_OPERATOR_REBALANCE) {
         if (enb_ue) {
             ogs_assert(enb_ue->relcause.group);
             r = s1ap_send_ue_context_release_command(enb_ue,

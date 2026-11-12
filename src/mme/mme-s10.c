@@ -13,6 +13,11 @@
 
 static ogs_list_t peers;
 
+bool mme_s10_has_peers(void)
+{
+    return !ogs_list_empty(&peers);
+}
+
 void mme_s10_init(void)
 {
     ogs_list_init(&peers);

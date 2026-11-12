@@ -86,6 +86,7 @@ ogs_pkbuf_t *mme_s10_build_forward_relocation_request(mme_ue_t *ue,
 ogs_pkbuf_t *mme_s10_build_context_response(mme_ue_t *ue, uint8_t cause);
 bool mme_s10_imsi_available(mme_ue_t *ue, const char *imsi);
 void mme_s10_init(void);
+bool mme_s10_has_peers(void);
 void mme_s10_final(void);
 int mme_s10_parse_peer(ogs_yaml_iter_t *parent);
 int mme_s10_open(void);
